@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="가계부">
+<meta name="theme-color" content="#F4EFE1">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%23F4EFE1'/%3E%3Crect x='30' y='26' width='120' height='128' fill='%23FDFBF4' stroke='%23DED5C1' stroke-width='3'/%3E%3Cpath d='M30 62h120M30 90h120M30 118h120' stroke='%23EDE7D8' stroke-width='3'/%3E%3Cpath d='M58 26v128' stroke='%23DED5C1' stroke-width='3'/%3E%3Ccircle cx='44' cy='48' r='5' fill='%2300806A'/%3E%3Ccircle cx='44' cy='76' r='5' fill='%2300806A'/%3E%3Ccircle cx='44' cy='104' r='5' fill='%23C03B22'/%3E%3Ccircle cx='44' cy='132' r='5' fill='%23C03B22'/%3E%3C/svg%3E">
+<title>가계부</title>
+<style>
+:root{
+  /* 아이보리 바탕. 회색을 노란 쪽으로 틀어 종이 느낌을 내고, 먹색도 따뜻하게. */
+  --paper:#F4EFE1; --sheet:#FDFBF4; --raise:#FFFFFF;
+  --ink:#26221A; --ink-2:#615A4C; --ink-3:#948C7C;
+  --rule:#DED5C1; --rule-2:#EDE7D8;
+  /* 수입·지출 색은 색각 이상 검증(validate_palette)을 통과한 쌍. 임의로 바꾸지 말 것 */
+  --in:#00806A; --out:#C03B22; --save:#2E6FC0; --idle:#8A8172; --focus:#00806A;
+  --f-ui:"Apple SD Gothic Neo","Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  --f-num:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;
+}
+
+html{color-scheme:light}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{
+  background:var(--paper); color:var(--ink); font-family:var(--f-ui);
+  font-size:16.5px; line-height:1.5; -webkit-text-size-adjust:100%;
+  padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 52px);
+  max-width:1160px; margin:0 auto;
+}
+button{font:inherit;font-family:inherit;color:inherit;cursor:pointer;background:none;border:none;padding:0}
+/* iOS는 16px 미만 입력칸에 포커스하면 화면을 확대해버림 → 입력칸은 최소 16px */
+input,textarea{font:inherit;font-family:inherit;font-size:16px;color:inherit;background:transparent;
+  border:none;padding:0;width:100%;min-width:0;border-radius:0}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input:focus{outline:none;background:var(--rule-2);box-shadow:0 0 0 1px var(--focus)}
+.n{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+/* ── 머리글 ── */
+.mast{display:flex;align-items:baseline;gap:10px;margin:0 2px 14px}
+.mast h1{font-size:21px;font-weight:800;letter-spacing:-.03em;margin:0}
+.mast .yr{font-family:var(--f-num);font-size:14px;color:var(--ink-3);letter-spacing:.04em}
+.mast .sp{flex:1}
+.lnk{font-size:13.5px;color:var(--ink-2);font-weight:600;padding:6px 2px;border-bottom:1px solid var(--rule)}
+.lnk:active{color:var(--out);border-color:var(--out)}
+
+/* ── 한 해 척추 ── 달마다 잔액. 막대가 곧 월 선택 탭 */
+.spinetitle{display:flex;align-items:baseline;gap:8px;margin:0 2px 3px}
+.spinetitle b{font-size:12px;font-weight:700;color:var(--ink-2)}
+.spinetitle span{font-size:11.5px;color:var(--ink-3)}
+.months{display:flex;gap:3px;overflow-x:auto;align-items:flex-end;scrollbar-width:none;padding-top:2px}
+.months::-webkit-scrollbar{display:none}
+.mo{flex:0 0 auto;width:62px;display:flex;flex-direction:column;align-items:stretch;
+  border-radius:7px 7px 0 0;padding:4px 4px 0;background:transparent;transition:background .13s}
+.mo .plot{height:62px;display:flex;flex-direction:column}
+/* 위 절반 = 남은 달, 아래 절반 = 모자란 달. 가운데 선이 0원 */
+.mo .up{height:31px;display:flex;align-items:flex-end}
+.mo .dn{height:31px;display:flex;align-items:flex-start}
+.mo .up i,.mo .dn i{width:100%;min-height:2px}
+.mo .up i{background:var(--in);border-radius:3px 3px 0 0}
+.mo .dn i{background:var(--out);border-radius:0 0 3px 3px}
+.mo .amt{font-family:var(--f-num);font-size:11px;font-weight:700;text-align:center;
+  line-height:1.2;padding:2px 0;letter-spacing:-.04em}
+.mo .amt.i{color:var(--in)} .mo .amt.o{color:var(--out)} .mo .amt.z{color:var(--ink-3)}
+.mo .lb{font-family:var(--f-num);font-size:12px;color:var(--ink-3);text-align:center;
+  padding:3px 0 7px;font-weight:600}
+.mo.on{background:var(--sheet);box-shadow:0 0 0 1px var(--rule)}
+.mo.on .lb{color:var(--ink);font-weight:800}
+.mo.empty .amt{opacity:.45}
+.mo.addmo{width:40px;color:var(--ink-3);font-size:16px;align-items:center;justify-content:flex-end;
+  padding-bottom:10px;border:1px dashed var(--rule);border-bottom:none;border-radius:7px 7px 0 0}
+.mo.addmo:active{color:var(--in);border-color:var(--in)}
+/* 0원 기준선 — 막대들 뒤로 가로지름 */
+.spine{position:relative}
+.zeroline{position:absolute;left:0;right:0;top:calc(4px + 31px + 2px);height:1px;
+  background:var(--rule);pointer-events:none}
+@media (prefers-reduced-motion:reduce){.mo{transition:none}}
+@media (pointer:coarse){ .mo{width:68px} }
+
+/* ── 종이 ── */
+.sheetpaper{background:var(--sheet);border:1px solid var(--rule);border-radius:0 4px 4px 4px;
+  padding:0 18px 6px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+
+/* 수지 요약 — 스크롤해도 위에 남아 있음 */
+.topband{position:sticky;top:0;z-index:6;background:var(--sheet);padding-top:16px;
+  margin:0 -18px;padding-inline:18px;border-bottom:2px solid var(--ink)}
+.band{display:flex;flex-wrap:wrap;gap:14px 30px;align-items:flex-end;padding-bottom:13px}
+.fig{display:flex;flex-direction:column;gap:2px}
+.fig .lb{font-size:11.5px;letter-spacing:.09em;color:var(--ink-3);font-weight:700}
+.fig .vv{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:19px;letter-spacing:-.03em;font-weight:600}
+.fig.big .vv{font-size:32px;font-weight:700;line-height:1.1}
+.fig .vv.i{color:var(--in)} .fig .vv.o{color:var(--out)} .fig .vv.s{color:var(--save)}
+.fig .dl{font-family:var(--f-num);font-size:11.5px;color:var(--ink-3);letter-spacing:-.01em}
+.band .sp{flex:1}
+.note{font-size:13px;color:var(--ink-2);max-width:230px;text-align:right;line-height:1.5}
+
+.gaugelb{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;color:var(--ink-3);
+  font-family:var(--f-num);letter-spacing:.01em;padding:0 0 12px}
+
+/* ── 구역 (수입 / 지출 / 계산 제외) ── */
+.grp{padding-top:20px}
+.grp+.grp{margin-top:6px}
+.grphead{display:flex;align-items:baseline;gap:9px;padding-bottom:7px;border-bottom:2px solid var(--ink)}
+.grphead .gs{font-family:var(--f-num);font-size:17px;font-weight:700;line-height:1}
+.grphead h3{font-size:15px;font-weight:800;letter-spacing:-.02em;margin:0}
+.grphead .sp{flex:1}
+.grphead .gt{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:19px;
+  font-weight:700;letter-spacing:-.03em}
+.g-in .gs,.g-in .gt{color:var(--in)}
+.g-out .gs,.g-out .gt{color:var(--out)}
+.g-save .gs,.g-save .gt{color:var(--save)}
+.g-note .gs,.g-note .gt{color:var(--idle)}
+.g-note .grphead{border-bottom-color:var(--rule)}
+
+/* ── 가계부 단 ── */
+.cols{columns:290px;column-gap:26px;column-rule:1px solid var(--rule);padding-top:16px}
+.blk{break-inside:avoid;margin:0 0 24px}
+.blkhead{display:flex;align-items:center;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--ink)}
+.sig{font-family:var(--f-num);font-size:14px;font-weight:700;width:21px;height:21px;line-height:19px;
+  text-align:center;border:1px solid currentColor;flex:0 0 auto}
+.sig.s-in{color:var(--in)} .sig.s-out{color:var(--out)}
+.sig.s-save{color:var(--save)} .sig.s-skip{color:var(--idle)}
+.blkhead .nm{font-weight:700;font-size:15.5px;letter-spacing:-.02em}
+.row{display:flex;align-items:center;gap:3px;padding:3px 0;border-bottom:1px solid var(--rule-2)}
+.row .nm{flex:1 1 auto;color:var(--ink-2);min-width:40px;padding:6px 2px 6px 0}
+.row .vl{flex:0 0 auto;width:116px;text-align:right;font-weight:700;color:var(--ink);padding:6px 2px}
+.row .vl.err{color:var(--out);font-size:12px;font-family:var(--f-ui);font-weight:600}
+.row .vl.fx{color:var(--in)}
+.row.pinned .nm{color:var(--ink)}
+/* 손가락으로 누르는 것들은 최소 30px 폭 확보 */
+.pin{width:30px;height:30px;flex:0 0 auto;font-family:var(--f-num);font-size:12px;
+  color:var(--ink-3);opacity:.4;text-align:center;border-radius:50%}
+.pin.on{opacity:1;color:var(--in)}
+.pin:active{background:var(--rule-2)}
+.x{width:30px;height:30px;flex:0 0 auto;font-size:13px;color:var(--ink-3);opacity:.35;
+  text-align:center;border-radius:50%}
+.x:active{opacity:1;color:var(--out);background:var(--rule-2)}
+@media (pointer:coarse){ .row{padding:5px 0} .pin,.x{width:34px;height:34px} }
+.blkfoot{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding-top:6px;
+  border-top:1px solid var(--ink);margin-top:-1px}
+.blkfoot .lb{font-size:11.5px;letter-spacing:.09em;color:var(--ink-3);font-weight:700}
+.blkfoot .vv{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-weight:700;font-size:16px;
+  letter-spacing:-.03em;border-bottom:3px double currentColor;padding-bottom:1px}
+.blkfoot .vv.i{color:var(--in)} .blkfoot .vv.o{color:var(--out)} .blkfoot .vv.s{color:var(--save)}
+.add{font-size:12.5px;color:var(--ink-3);padding:8px 0 0;font-weight:600}
+.add:active{color:var(--in)}
+.newblk{break-inside:avoid;width:100%;text-align:left;font-size:13.5px;color:var(--ink-3);
+  border:1px dashed var(--rule);padding:12px;font-weight:600;margin-bottom:24px}
+.newblk:active{color:var(--in);border-color:var(--in)}
+
+/* ── 하단 ── */
+.foot{margin-top:26px}
+h2{font-size:10.5px;letter-spacing:.11em;color:var(--ink-3);margin:0 0 8px;font-weight:700}
+
+/* 이 달의 기록 — 요약 바로 아래, 가계부 여백에 손으로 적어둔 자리 */
+.memostrip{padding:14px 0 2px}
+.memostrip h2{margin-bottom:5px}
+.memo{width:100%;background:transparent;border:none;border-left:2px solid var(--rule);
+  padding:1px 0 1px 11px;resize:none;overflow:hidden;font-size:13.5px;line-height:1.7;
+  color:var(--ink-2);min-height:24px}
+.memo::placeholder{color:var(--ink-3)}
+.memo:focus{background:transparent;border-left-color:var(--in);color:var(--ink)}
+.tools{display:flex;gap:6px;flex-wrap:wrap}
+.tools button{border:1px solid var(--rule);padding:8px 13px;font-size:12.5px;font-weight:600;
+  color:var(--ink-2);background:var(--sheet)}
+.tools button:active{border-color:var(--ink);color:var(--ink)}
+.tools button.danger:active{border-color:var(--out);color:var(--out)}
+.hint{font-size:12px;color:var(--ink-3);line-height:1.75;margin:14px 2px 0}
+.hint b{color:var(--ink-2)}
+.hint code{font-family:var(--f-num);font-size:11px;color:var(--ink-2);
+  border-bottom:1px solid var(--rule);padding:0 1px}
+
+/* ── 구분 고르기 ── */
+.kindmenu{position:fixed;z-index:60;background:var(--sheet);border:1px solid var(--rule);
+  border-radius:12px;box-shadow:0 8px 26px rgba(38,34,26,.16);padding:5px;min-width:186px;
+  animation:pop .12s ease-out}
+.kindmenu .hd{font-size:11px;letter-spacing:.08em;color:var(--ink-3);font-weight:700;
+  padding:6px 10px 5px}
+.kindmenu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  padding:9px 10px;border-radius:8px;font-size:14.5px;font-weight:600;color:var(--ink-2)}
+.kindmenu button:hover{background:var(--rule-2)}
+.kindmenu button .g{font-family:var(--f-num);font-weight:700;width:20px;height:20px;line-height:18px;
+  text-align:center;border:1px solid currentColor;border-radius:3px;font-size:13px;flex:0 0 auto}
+.kindmenu button .d{font-size:11.5px;color:var(--ink-3);font-weight:500;margin-left:auto}
+.kindmenu button.on{color:var(--ink);background:var(--rule-2)}
+.kindmenu .k-in{color:var(--in)} .kindmenu .k-out{color:var(--out)}
+.kindmenu .k-save{color:var(--save)} .kindmenu .k-note{color:var(--idle)}
+@keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.kindmenu{animation:none}}
+
+/* ── 되돌리기 알림 ── */
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 22px);
+  z-index:50;display:flex;align-items:center;gap:14px;background:var(--ink);color:var(--sheet);
+  padding:12px 14px 12px 18px;border-radius:11px;font-size:14px;font-weight:600;
+  box-shadow:0 6px 22px rgba(0,0,0,.22);max-width:calc(100vw - 32px);
+  animation:rise .16s ease-out}
+.toast button{color:inherit;font-weight:800;font-size:14px;padding:5px 11px;border-radius:8px;
+  border:1px solid currentColor;white-space:nowrap;opacity:.9}
+.toast button:active{opacity:1;background:rgba(255,255,255,.16)}
+@keyframes rise{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="mast">
+  <h1>가계부</h1>
+  <span class="yr" id="yr"></span>
+  <span class="sp"></span>
+  <button class="lnk" id="allBtn">구성을 전 월에 반영</button>
+</div>
+
+<div class="spinetitle">
+  <b>달마다 잔액</b><span id="spineNote"></span>
+</div>
+<div class="spine">
+  <div class="zeroline"></div>
+  <div class="months" id="tabs"></div>
+</div>
+
+<div class="sheetpaper">
+  <div class="topband">
+    <div class="band">
+      <div class="fig"><span class="lb">들어온 돈</span><span class="vv i n" id="sIn">0</span></div>
+      <div class="fig"><span class="lb">나간 돈</span><span class="vv o n" id="sOut">0</span></div>
+      <div class="fig"><span class="lb">모은 돈</span><span class="vv s n" id="sSave">0</span></div>
+      <div class="fig big"><span class="lb">잔액</span><span class="vv n" id="sNet">0</span>
+        <span class="dl" id="sDelta"></span></div>
+      <div class="sp"></div>
+      <div class="note" id="note"></div>
+    </div>
+    <div class="gaugelb"><span id="gaugeL"></span><span id="gaugeR"></span></div>
+  </div>
+
+  <div class="memostrip">
+    <h2>이 달의 기록</h2>
+    <textarea class="memo" id="memo" rows="1" placeholder="이번 달 특이사항을 적어둬. 여기 적은 건 그 달에만 남아."></textarea>
+  </div>
+
+  <div id="sheet"></div>
+</div>
+
+<div class="foot">
+  <div>
+    <h2>보관</h2>
+    <div class="tools">
+      <button id="expJson">백업 내려받기</button>
+      <button id="impJson">백업 불러오기</button>
+      <button id="expCsv">CSV로 내보내기</button>
+      <button id="delMonth" class="danger">이 달 삭제</button>
+    </div>
+    <input type="file" id="file" accept=".json" hidden>
+    <p class="hint">
+      <b>수식</b> 칸에 <code>500000+250000*2</code> 처럼 사칙연산을 쓸 수 있어. 다른 항목은
+      <code>[월세]*12</code> 처럼 대괄호로 부르고, 대괄호 안에 섹션 이름을 넣으면 그 섹션 합계를 가리켜.
+      칸을 누르면 수식이, 손을 떼면 계산값이 보여.<br>
+      <b>고정 ●</b> 켜두면 새 달을 만들 때 금액까지 그대로 넘어와. 꺼두면 이름만 넘어오고 금액은 빈칸.<br>
+      <b>＋</b> 척추 맨 오른쪽 ＋ 를 누르면 다음 달이 생겨. 섹션 앞의 <b>＋ − ↓ ·</b> 뱃지를 누르면
+      어디로 보낼지 고르는 메뉴가 열려.
+      <b>모은 돈(↓)</b>은 통장에선 빠지지만 재산에선 안 빠져. <b>참고(·)</b>는 아파트 자본금처럼
+      쌓여 있는 잔액이라 어느 계산에도 안 들어가.<br>
+      <b>구성을 전 월에 반영</b> 지금 달에서 만든 섹션과 항목을 다른 모든 달에 한 번에 복사해.
+      이미 적어둔 금액은 건드리지 않아.<br>
+      기록은 이 기기에만 남아. 가끔 백업을 내려받아 iCloud에 둬.
+    </p>
+  </div>
+</div>
+
+<script>
+"use strict";
+const KEY='ledger-sheet-v1';
+const $=s=>document.querySelector(s);
+const won=n=>(n<0?'−':'')+Math.round(Math.abs(n)).toLocaleString('ko-KR');
+let seq=0; const uid=()=>Math.random().toString(36).slice(2,9)+(seq++);
+
+/* ── 수식 엔진 (eval 미사용) ── */
+function tokenize(s){
+  const re=/\s*(\[[^\]]*\]|\d[\d,]*(?:\.\d+)?|\.\d+|[+\-*/()])/g;
+  const out=[]; let m,last=0;
+  while((m=re.exec(s))){
+    if(s.slice(last,m.index).trim()) throw Error('식 오류');
+    out.push(m[1]); last=re.lastIndex;
+  }
+  if(s.slice(last).trim()) throw Error('식 오류');
+  return out;
+}
+function parseExpr(tk,resolve){
+  let i=0;
+  const peek=()=>tk[i], eat=()=>tk[i++];
+  function primary(){
+    const t=eat();
+    if(t===undefined) throw Error('식 오류');
+    if(t==='('){ const v=expr(); if(eat()!==')') throw Error('괄호 오류'); return v }
+    if(t==='-') return -primary();
+    if(t==='+') return primary();
+    if(t[0]==='[') return resolve(t.slice(1,-1).trim());
+    const n=Number(t.replace(/,/g,''));
+    if(Number.isNaN(n)) throw Error('식 오류');
+    return n;
+  }
+  function term(){
+    let v=primary();
+    while(peek()==='*'||peek()==='/'){
+      const op=eat(), r=primary();
+      if(op==='/'){ if(r===0) throw Error('0으로 나눔'); v/=r } else v*=r;
+    }
+    return v;
+  }
+  function expr(){
+    let v=term();
+    while(peek()==='+'||peek()==='-'){ const op=eat(); v = op==='+' ? v+term() : v-term() }
+    return v;
+  }
+  const v=expr();
+  if(i<tk.length) throw Error('식 오류');
+  return v;
+}
+function compute(month){
+  const itemVal={},secTot={},err={},byName={},secByName={};
+  month.sections.forEach(s=>{
+    if(!secByName[s.name]) secByName[s.name]=s;
+    s.items.forEach(it=>{ if(!byName[it.name]) byName[it.name]=it });
+  });
+  const stack=new Set();
+  function valOfItem(it){
+    if(it.id in itemVal) return itemVal[it.id];
+    if(stack.has(it.id)) throw Error('순환 참조');
+    stack.add(it.id);
+    let v=0;
+    try{
+      const raw=(it.raw||'').trim().replace(/^=/,'');
+      if(!raw) v=0;
+      else if(/^-?[\d,]+(\.\d+)?$/.test(raw)) v=Number(raw.replace(/,/g,''));
+      else v=parseExpr(tokenize(raw),resolve);
+      if(!Number.isFinite(v)) throw Error('식 오류');
+    }catch(e){ err[it.id]=e.message; v=0 }
+    stack.delete(it.id);
+    itemVal[it.id]=v;
+    return v;
+  }
+  function valOfSec(s){
+    if(s.id in secTot) return secTot[s.id];
+    if(stack.has(s.id)) throw Error('순환 참조');
+    stack.add(s.id); secTot[s.id]=0;
+    let t=0; s.items.forEach(it=>t+=valOfItem(it));
+    stack.delete(s.id); secTot[s.id]=t;
+    return t;
+  }
+  function resolve(name){
+    if(byName[name]) return valOfItem(byName[name]);
+    if(secByName[name]) return valOfSec(secByName[name]);
+    throw Error('['+name+'] 없음');
+  }
+  month.sections.forEach(valOfSec);
+  return {itemVal,secTot,err};
+}
+
+/* ── 자료 ── */
+let db=load(), curKey;
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem(KEY));
+    if(d&&d.months){
+      /* 예전 'skip' 하나를 저축(흐름)과 참고(잔액)로 가른다 */
+      Object.values(d.months).forEach(M=>M.sections.forEach(s=>{
+        if(s.kind==='skip') s.kind=/자산|자본|잔액|시세|평가/.test(s.name)?'note':'save';
+      }));
+      return d;
+    }
+  }catch(e){}
+  return seedDB();
+}
+const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
+
+function seedDB(){
+  /* 처음 열었을 때의 빈 가계부. 실제 금액은 백업 JSON을 불러와서 채운다. */
+  const S=(name,kind,items)=>({id:uid(),name,kind,
+    items:items.map(n=>({id:uid(),name:n,raw:'',fixed:false}))});
+  const now=new Date();
+  const k=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  return {months:{[k]:{memo:'',sections:[
+    S('월급','in',['본인','배우자']),
+    S('그 밖의 수입','in',['지원금','부수입']),
+    S('저축','save',['적금','청약','투자']),
+    S('매달 같은 지출','out',['통신비','구독료','할부']),
+    S('생활비','out',['식비','교통비']),
+    S('주거','out',['월세','관리비','대출이자']),
+    S('보험료','out',['보험']),
+    S('카드값','out',['카드']),
+    S('참고','note',['자산 잔액']),
+  ]}}};
+}
+const keys=()=>Object.keys(db.months).sort();
+const shift=(k,d)=>{const [y,m]=k.split('-').map(Number);const dt=new Date(y,m-1+d,1);
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')};
+function nearestKey(k){const ks=keys();if(!ks.length)return null;
+  return ks.includes(k)?k:(ks.filter(x=>x<=k).pop()||ks[0])}
+
+/* ── 그리기 ── */
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const isFormula=r=>!!r&&!/^-?[\d,]+(\.\d+)?$/.test(r.trim());
+const SIG={in:['＋','s-in'],out:['−','s-out'],save:['↓','s-save'],note:['·','s-skip']};
+const NEXTKIND={in:'out',out:'save',save:'note',note:'in'};
+const KINDNAME={in:'들어온 돈',out:'나간 돈',save:'모은 돈',note:'참고'};
+
+/* 달마다 수입·지출 합계 (척추 그리기용) */
+function monthTotals(k){
+  const M=db.months[k], C=compute(M);
+  let i=0,o=0,sv=0;
+  M.sections.forEach(s=>{
+    const t=C.secTot[s.id]||0;
+    if(s.kind==='in') i+=t; else if(s.kind==='out') o+=t; else if(s.kind==='save') sv+=t;
+  });
+  return {i,o,sv};
+}
+/* 큰 금액은 만원 단위로 줄여 쓴다: 1,612,784 → +161만 */
+function man(v){
+  if(!v) return '0';
+  const s=v<0?'−':'+', a=Math.abs(v);
+  if(a>=100000000) return s+(a/100000000).toFixed(1).replace(/\.0$/,'')+'억';
+  return s+Math.round(a/10000).toLocaleString('ko-KR')+'만';
+}
+function renderTabs(){
+  const ks=keys(), N={};
+  let max=0;
+  ks.forEach(k=>{ const {i,o,sv}=monthTotals(k); const n=i-o-sv; N[k]={net:n,i,o,sv}; max=Math.max(max,Math.abs(n)) });
+  if(!max) max=1;
+  $('#spineNote').textContent='들어온 돈 − 나간 돈 − 모은 돈. 위로 뻗으면 남은 달, 아래로 뻗으면 모자란 달.';
+  $('#tabs').innerHTML = ks.map(k=>{
+    const {net,i,o,sv}=N[k], m=Number(k.split('-')[1]);
+    const h=Math.abs(net)/max*100;
+    const empty = i===0 && o===0 && sv===0;
+    return `<button class="mo ${k===curKey?'on':''} ${empty?'empty':''}" data-k="${k}"
+      title="${m}월 · 들어온 돈 ${won(i)}원 · 나간 돈 ${won(o)}원 · 저축 ${won(sv)}원 · 잔액 ${won(net)}원"
+      aria-label="${m}월, 잔액 ${won(net)}원">
+      <span class="amt ${net>0?'i':net<0?'o':'z'}">${net>0?man(net):''}</span>
+      <span class="plot" aria-hidden="true">
+        <span class="up">${net>0?`<i style="height:${h}%"></i>`:''}</span>
+        <span class="dn">${net<0?`<i style="height:${h}%"></i>`:''}</span>
+      </span>
+      <span class="amt ${net<0?'o':'z'}">${net<0?man(net):''}</span>
+      <span class="lb">${m}월</span>
+    </button>`;
+  }).join('') + `<button class="mo addmo" id="tabAdd" title="다음 달 만들기" aria-label="다음 달 만들기">＋</button>`;
+  /* 선택된 달을 가운데로 — 척추 안에서 가로로만 움직인다.
+     scrollIntoView를 쓰면 페이지 세로 스크롤까지 끌어올려서 화면이 튄다. */
+  const c=$('#tabs'), on=c.querySelector('.mo.on');
+  if(on) c.scrollLeft = on.offsetLeft - (c.clientWidth - on.offsetWidth)/2;
+}
+function render(){
+  const M=db.months[curKey];
+  renderTabs();
+  $('#yr').textContent=curKey.replace('-','.');
+  $('#memo').value=M.memo||'';
+  autoGrow($('#memo'));
+
+  const C=compute(M);
+  let tin=0,tout=0,tsave=0,tnote=0;
+  M.sections.forEach(s=>{
+    const t=C.secTot[s.id]||0;
+    if(s.kind==='in') tin+=t; else if(s.kind==='out') tout+=t;
+    else if(s.kind==='save') tsave+=t; else tnote+=t;
+  });
+  const net=tin-tout-tsave;      /* 잔액 */
+  const wealth=tin-tout;         /* 재산 증감 — 저축은 사라진 게 아니라 옮긴 것 */
+  $('#sIn').textContent=won(tin);
+  $('#sOut').textContent=won(tout);
+  $('#sSave').textContent=won(tsave);
+  $('#sNet').textContent=won(net);
+  $('#sNet').className='vv n '+(net<0?'o':'i');
+
+  /* 잔액을 사람 말로 한 줄 */
+  $('#sDelta').textContent = net===0 ? '딱 맞췄음'
+    : net<0 ? `${won(-net)}만큼 행복해짐`
+            : `${won(net)}만큼 열심히 살았음`;
+
+  $('#gaugeL').textContent = tsave
+    ? `저축 ${won(tsave)}은 쓴 게 아니라 옮긴 돈 — 재산 기준으로는 ${won(wealth)}`
+    : (tin>0 ? `지출이 수입의 ${Math.round(tout/tin*100)}%` : '');
+  $('#gaugeR').textContent = tnote ? `참고 · ${won(tnote)}` : '';
+  $('#note').textContent = net<0
+    ? '모자란 달이야. 나간 돈 쪽을 한 번 보자.'
+    : tin===0 ? '아직 들어온 돈을 안 적었어.' : '남은 돈이 있어. 이대로 가면 돼.';
+
+  const GRP=[['in','＋','들어온 돈',tin],['out','−','나간 돈',tout],
+             ['save','↓','모은 돈',tsave],['note','·','참고만 (계산 안 함)',tnote]];
+  $('#sheet').innerHTML=GRP.map(([kind,sign,label,total])=>`
+    <div class="grp g-${kind}">
+      <div class="grphead">
+        <span class="gs">${sign}</span><h3>${label}</h3>
+        <span class="sp"></span><span class="gt">${won(total)}</span>
+      </div>
+      <div class="cols">
+        ${M.sections.filter(s=>s.kind===kind).map(s=>blockHTML(s,C)).join('')}
+        <button class="newblk" data-newsec="${kind}">＋ 섹션 추가</button>
+      </div>
+    </div>`).join('');
+}
+
+function blockHTML(s,C){
+  return `
+    <section class="blk" data-sec="${s.id}">
+      <header class="blkhead">
+        <button class="sig ${SIG[s.kind][1]}" data-act="kind" title="이 섹션을 어디로 보낼지 고르기">${SIG[s.kind][0]}</button>
+        <input class="nm" data-act="secname" value="${esc(s.name)}" aria-label="섹션 이름">
+        <button class="x" data-act="delsec" title="섹션 삭제">✕</button>
+      </header>
+      ${s.items.map(it=>`
+        <div class="row ${it.fixed?'pinned':''}" data-item="${it.id}">
+          <input class="nm" data-act="itemname" value="${esc(it.name)}" aria-label="항목 이름"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <input class="vl n ${C.err[it.id]?'err':isFormula(it.raw)?'fx':''}"
+                 data-act="val" data-raw="${esc(it.raw||'')}" aria-label="금액"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                 value="${C.err[it.id]?esc(C.err[it.id]):won(C.itemVal[it.id]||0)}">
+          <button class="pin ${it.fixed?'on':''}" data-act="pin" title="다음 달에 금액까지 넘기기">${it.fixed?'●':'○'}</button>
+          <button class="x" data-act="delitem" title="항목 삭제">✕</button>
+        </div>`).join('')}
+      <button class="add" data-act="additem">＋ 항목</button>
+      <div class="blkfoot">
+        <span class="lb">합계</span>
+        <span class="vv n ${s.kind==='in'?'i':s.kind==='out'?'o':s.kind==='save'?'s':''}">${won(C.secTot[s.id]||0)}</span>
+      </div>
+    </section>`;
+}
+
+/* 섹션을 어느 구역으로 보낼지 고르는 메뉴 */
+const KINDDESC={in:'통장·재산 모두 늘어남',out:'써서 없어진 돈',
+                save:'통장에선 빠지고 재산은 그대로',note:'어느 계산에도 안 들어감'};
+function closeKindMenu(){ document.querySelector('.kindmenu')?.remove() }
+function openKindMenu(sec,anchor){
+  closeKindMenu();
+  const el=document.createElement('div');
+  el.className='kindmenu';
+  el.innerHTML=`<div class="hd">'${esc(sec.name)}'을 어디로 보낼까</div>`+
+    ['in','out','save','note'].map(k=>
+      `<button type="button" data-kind="${k}" class="${k===sec.kind?'on':''}">
+         <span class="g k-${k}">${SIG[k][0]}</span>${KINDNAME[k]}
+         <span class="d">${KINDDESC[k]}</span>
+       </button>`).join('');
+  document.body.appendChild(el);
+
+  /* 버튼 아래에 붙이되 화면 밖으로 나가지 않게 */
+  const r=anchor.getBoundingClientRect(), w=el.offsetWidth, h=el.offsetHeight;
+  el.style.left=Math.min(Math.max(8,r.left), innerWidth-w-8)+'px';
+  el.style.top=(r.bottom+6+h>innerHeight ? Math.max(8,r.top-h-6) : r.bottom+6)+'px';
+
+  el.addEventListener('click',e=>{
+    const b=e.target.closest('[data-kind]'); if(!b) return;
+    const y=window.scrollY;
+    sec.kind=b.dataset.kind; save(); render(); window.scrollTo(0,y);
+    closeKindMenu();
+  });
+  setTimeout(()=>{
+    addEventListener('pointerdown',onAway,{once:true});
+    addEventListener('keydown',onEsc,{once:true});
+  },0);
+  function onAway(e){ if(el.contains(e.target)) addEventListener('pointerdown',onAway,{once:true});
+                      else closeKindMenu() }
+  function onEsc(e){ if(e.key==='Escape') closeKindMenu(); else addEventListener('keydown',onEsc,{once:true}) }
+}
+
+/* 이름칸에 커서를 넣되 화면은 그대로 둔다 */
+function selectSoftly(el){
+  if(!el) return;
+  const y=window.scrollY;
+  el.focus({preventScroll:true});
+  el.select();
+  window.scrollTo(0,y);
+}
+
+/* ── 되돌리기 ── */
+const snapshot=()=>({key:curKey,data:JSON.stringify(db.months[curKey])});
+let toastTimer;
+function toast(msg,snap){
+  document.querySelector('.toast')?.remove();
+  clearTimeout(toastTimer);
+  const el=document.createElement('div');
+  el.className='toast';
+  el.innerHTML=`<span></span><button type="button">되돌리기</button>`;
+  el.firstChild.textContent=msg;
+  el.querySelector('button').onclick=()=>{
+    db.months[snap.key]=JSON.parse(snap.data);
+    save(); curKey=snap.key; render(); el.remove(); clearTimeout(toastTimer);
+  };
+  document.body.appendChild(el);
+  toastTimer=setTimeout(()=>el.remove(),7000);
+}
+
+/* ── 조작 ── */
+const findSec=el=>db.months[curKey].sections.find(s=>s.id===el.closest('.blk').dataset.sec);
+const findItem=el=>{const s=findSec(el);return [s,s.items.find(i=>i.id===el.closest('.row').dataset.item)]};
+
+$('#tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.id==='tabAdd'){
+    const ks=keys();
+    const k = ks.length ? shift(ks[ks.length-1],1)
+      : new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+    makeMonth(k); curKey=k;
+  } else curKey=b.dataset.k;
+  render();
+});
+
+$('#sheet').addEventListener('click',e=>{
+  const nb=e.target.closest('[data-newsec]');
+  if(nb){
+    const kind=nb.dataset.newsec, id=uid();
+    db.months[curKey].sections.push({id,name:'새 섹션',kind,
+      items:[{id:uid(),name:'항목',raw:'',fixed:false}]});
+    const y=window.scrollY;
+    save(); render(); window.scrollTo(0,y);
+    selectSoftly(document.querySelector(`[data-sec="${id}"] .blkhead .nm`));
+    return;
+  }
+  const b=e.target.closest('[data-act]'); if(!b) return;
+  const act=b.dataset.act;
+  if(act==='kind'){ openKindMenu(findSec(b),b) }
+  else if(act==='pin'){ const [,it]=findItem(b); it.fixed=!it.fixed; save(); render() }
+  else if(act==='delsec'){
+    const s=findSec(b), snap=snapshot();
+    const M=db.months[curKey]; M.sections=M.sections.filter(x=>x!==s); save(); render();
+    toast(`'${s.name}' 섹션을 지웠어`,snap);
+  }
+  else if(act==='delitem'){
+    const [s,it]=findItem(b), snap=snapshot();
+    s.items=s.items.filter(x=>x!==it); save(); render();
+    toast(`'${it.name}' 항목을 지웠어`,snap);
+  }
+  else if(act==='additem'){
+    const s=findSec(b), secId=s.id;
+    const y=window.scrollY;
+    s.items.push({id:uid(),name:'새 항목',raw:'',fixed:false}); save(); render();
+    window.scrollTo(0,y);
+    const rows=document.querySelector(`[data-sec="${secId}"]`).querySelectorAll('.row');
+    selectSoftly(rows[rows.length-1].querySelector('.nm'));
+  }
+});
+
+$('#sheet').addEventListener('focusin',e=>{
+  const el=e.target;
+  if(el.dataset.act==='val'){ el.value=el.dataset.raw; el.classList.remove('err'); setTimeout(()=>el.select(),0) }
+});
+$('#sheet').addEventListener('focusout',e=>{
+  const el=e.target, act=el.dataset.act;
+  if(act==='val'){ const [,it]=findItem(el); it.raw=el.value.trim(); save(); render() }
+  else if(act==='itemname'){
+    const [,it]=findItem(el), v=el.value.trim();
+    if(v&&v!==it.name){ it.name=v; save(); render() } else el.value=it.name;
+  }
+  else if(act==='secname'){
+    const s=findSec(el), v=el.value.trim();
+    if(v&&v!==s.name){ s.name=v; save(); render() } else el.value=s.name;
+  }
+});
+$('#sheet').addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  e.preventDefault();
+  const vals=[...document.querySelectorAll('[data-act="val"]')];
+  const i=vals.indexOf(e.target);
+  e.target.blur();
+  if(i>-1) setTimeout(()=>{const n=document.querySelectorAll('[data-act="val"]')[i+1]; n&&n.focus()},0);
+});
+
+$('#allBtn').onclick=()=>{
+  const ks=keys().filter(k=>k!==curKey);
+  if(!ks.length){ alert('다른 달이 아직 없어.'); return }
+  if(!confirm(`${Number(curKey.split('-')[1])}월의 섹션과 항목 구성을 나머지 ${ks.length}개 달에 반영할까?\n\n없는 섹션과 항목은 새로 생기고, 이미 적어둔 금액은 그대로 둬. 고정(●) 항목만 금액까지 함께 복사돼.`)) return;
+  const src=db.months[curKey];
+  ks.forEach(k=>{
+    const M=db.months[k];
+    src.sections.forEach((ss,si)=>{
+      let ts=M.sections.find(x=>x.name===ss.name);
+      if(!ts){ ts={id:uid(),name:ss.name,kind:ss.kind,items:[]}; M.sections.splice(si,0,ts) }
+      ss.items.forEach(s2=>{
+        const ti=ts.items.find(x=>x.name===s2.name);
+        if(!ti) ts.items.push({id:uid(),name:s2.name,raw:s2.fixed?s2.raw:'',fixed:s2.fixed});
+        else ti.fixed=s2.fixed;
+      });
+    });
+  });
+  save(); render();
+};
+$('#delMonth').onclick=()=>{
+  if(keys().length<2){ alert('마지막 한 달은 지울 수 없어.'); return }
+  if(!confirm(`${Number(curKey.split('-')[1])}월을 통째로 지울까?`)) return;
+  delete db.months[curKey]; save(); curKey=keys()[keys().length-1]; render();
+};
+function makeMonth(k){
+  if(db.months[k]) return;
+  const base=db.months[nearestKey(k)];
+  db.months[k]= base ? {memo:'',sections:base.sections.map(s=>({id:uid(),name:s.name,kind:s.kind,
+      items:s.items.map(it=>({id:uid(),name:it.name,raw:it.fixed?it.raw:'',fixed:it.fixed}))}))}
+    : {memo:'',sections:[]};
+  save();
+}
+function autoGrow(el){ el.style.height='auto'; el.style.height=Math.max(24,el.scrollHeight)+'px' }
+$('#memo').addEventListener('input',e=>{ autoGrow(e.target); db.months[curKey].memo=e.target.value; save() });
+
+/* ── 보관 ── */
+function dl(name,text,mime){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:mime}));
+  a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+const today=()=>new Date().toISOString().slice(0,10);
+$('#expJson').onclick=()=>dl(`가계부-${today()}.json`,JSON.stringify(db,null,1),'application/json');
+$('#expCsv').onclick=()=>{
+  let out='﻿월,섹션,구분,항목,수식,금액\n';
+  keys().forEach(k=>{
+    const C=compute(db.months[k]);
+    db.months[k].sections.forEach(s=>s.items.forEach(it=>{
+      out+=[k,`"${s.name}"`,s.kind,`"${it.name}"`,`"${(it.raw||'').replace(/"/g,'""')}"`,
+            Math.round(C.itemVal[it.id]||0)].join(',')+'\n';
+    }));
+  });
+  dl(`가계부-${today()}.csv`,out,'text/csv');
+};
+$('#impJson').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!d||!d.months) throw Error();
+      if(!confirm(`${Object.keys(d.months).length}개월치를 불러와. 지금 기록은 덮어써져. 진행할까?`)) return;
+      db=d; save(); curKey=nearestKey(curKey)||keys()[0]; render();
+    }catch(err){ alert('이 파일은 읽을 수 없어. 이 가계부에서 내려받은 백업 파일인지 확인해줘.') }
+  };
+  r.readAsText(f); e.target.value='';
+};
+
+/* 시작 */
+const now=new Date();
+curKey=nearestKey(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'))||keys()[0];
+if(!curKey){ db=seedDB(); save(); curKey=keys()[0] }
+render();
+</script>
+</body>
+</html>
