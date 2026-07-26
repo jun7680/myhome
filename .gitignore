@@ -3,3 +3,9 @@
 *.numbers
 .omc/
 .DS_Store
+
+# 원본 아기 사진 / 원본 캡션 이미지 — 공개 레포에 올리지 말 것 (아이콘 PNG만 공개)
+*.jpg
+*.jpeg
+*.heic
+baby-caption.png
