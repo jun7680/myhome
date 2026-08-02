@@ -17,7 +17,7 @@
   --ink:#26221A; --ink-2:#615A4C; --ink-3:#948C7C;
   --rule:#DED5C1; --rule-2:#EDE7D8;
   /* 수입·지출 색은 색각 이상 검증(validate_palette)을 통과한 쌍. 임의로 바꾸지 말 것 */
-  --in:#00806A; --out:#C03B22; --save:#2E6FC0; --idle:#8A8172; --focus:#00806A;
+  --in:#00A88C; --out:#C03B22; --save:#2E6FC0; --idle:#8A8172; --focus:#00806A;
   --f-ui:"Apple SD Gothic Neo","Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
   --f-num:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;
 }
@@ -94,6 +94,33 @@ input:focus{outline:none;background:var(--rule-2);box-shadow:0 0 0 1px var(--foc
 .fig.big .vv{font-size:32px;font-weight:700;line-height:1.1}
 .fig .vv.i{color:var(--in)} .fig .vv.o{color:var(--out)} .fig .vv.s{color:var(--save)}
 .fig .dl{font-family:var(--f-num);font-size:11.5px;color:var(--ink-3);letter-spacing:-.01em}
+/* 요약 숫자를 눌러 펼치는 상세내역 */
+.fig.tap{text-align:left;align-items:flex-start}
+.fig.tap .cv{font-style:normal;font-size:9px;opacity:.55;transition:transform .12s}
+.fig.tap[aria-expanded="true"] .cv{transform:rotate(180deg);display:inline-block;opacity:1}
+.fig.tap[aria-expanded="true"] .lb{color:var(--ink)}
+.dtl{border-top:1px solid var(--rule);padding:11px 0 13px;max-height:46vh;overflow:auto;
+  overscroll-behavior:contain}
+.dtl .dh{display:flex;align-items:baseline;gap:8px;font-size:11.5px;letter-spacing:.09em;
+  font-weight:700;color:var(--ink-3);margin-bottom:8px}
+.dtl .ds{font-weight:700;color:var(--ink);margin:9px 0 2px;font-size:13px}
+.dtl .ds:first-of-type{margin-top:0}
+.dtl .dr{display:flex;gap:10px;align-items:baseline;font-size:13px;padding:2px 0 2px 12px}
+.dtl .dr .dn{flex:1 1 auto;color:var(--ink-2);min-width:40px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dtl .dr .dv{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.dtl .dr .dx{font-family:var(--f-num);font-size:11px;color:var(--ink-3);letter-spacing:-.01em;
+  flex:0 0 auto;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dtl .dr.sub .dv{color:var(--ink-2)}
+.dtl .dr.pp{padding-left:26px;font-size:12px;color:var(--ink-3)}
+.dtl .dr.pp .dn{color:var(--ink-3)}
+.dtl .dr.pp .dn::before{content:"└ ";opacity:.5}
+.dtl .dr.pp .dv{color:var(--ink-3)}
+.dtl .dt{display:flex;gap:10px;font-size:13px;font-weight:700;padding:7px 0 0;margin-top:8px;
+  border-top:1px solid var(--ink)}
+.dtl .dt .dn{flex:1 1 auto}
+.dtl .dt .dv{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.dtl .none{font-size:13px;color:var(--ink-3)}
 .band .sp{flex:1}
 .note{font-size:13px;color:var(--ink-2);max-width:230px;text-align:right;line-height:1.5}
 
@@ -130,6 +157,29 @@ input:focus{outline:none;background:var(--rule-2);box-shadow:0 0 0 1px var(--foc
 .row .vl.err{color:var(--out);font-size:12px;font-family:var(--f-ui);font-weight:600}
 .row .vl.fx{color:var(--in)}
 .row.pinned .nm{color:var(--ink)}
+/* 항목 펼침 화살표와 세부내역 줄 */
+/* 여기가 눌러서 펼치는 자리라는 걸 한눈에 알게 — 테두리 있는 칩으로 확실하게 */
+.cx{width:24px;height:24px;flex:0 0 auto;font-size:11px;line-height:22px;text-align:center;
+  color:var(--ink-2);background:var(--rule-2);border:1px solid var(--rule);border-radius:6px;
+  font-family:var(--f-num);font-weight:700}
+.cx.on{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+.row.hasparts .cx{border-color:var(--ink-3);color:var(--ink)}
+.cx:active{background:var(--in);border-color:var(--in);color:#fff}
+.row .pc{flex:0 0 auto;font-family:var(--f-num);font-size:10.5px;font-weight:700;color:var(--ink-3);
+  border:1px solid var(--rule);border-radius:9px;padding:0 6px;line-height:16px}
+.row .vl.sum{color:var(--ink);border-bottom:1px solid var(--rule)}
+.parts{border-bottom:1px solid var(--rule-2);padding:2px 0 7px 22px;background:var(--sheet)}
+.prow{display:flex;align-items:center;gap:3px;padding:1px 0}
+.prow::before{content:"└";flex:0 0 auto;color:var(--ink-3);opacity:.4;font-size:11px;
+  font-family:var(--f-num);width:12px}
+.prow .nm{flex:1 1 auto;color:var(--ink-2);min-width:40px;padding:5px 2px 5px 0;font-size:14px}
+.prow .vl{flex:0 0 auto;width:116px;text-align:right;font-weight:600;color:var(--ink-2);
+  padding:5px 2px;font-size:14px}
+.prow .vl.err{color:var(--out);font-size:12px;font-family:var(--f-ui)}
+.prow .vl.fx{color:var(--in)}
+.addp{font-size:12px;color:var(--ink-3);padding:6px 0 0 12px;font-weight:600}
+.addp:active{color:var(--in)}
+@media (pointer:coarse){ .cx{width:30px} .parts{padding-left:14px} }
 /* 손가락으로 누르는 것들은 최소 30px 폭 확보 */
 .pin{width:30px;height:30px;flex:0 0 auto;font-family:var(--f-num);font-size:12px;
   color:var(--ink-3);opacity:.4;text-align:center;border-radius:50%}
@@ -224,14 +274,15 @@ h2{font-size:10.5px;letter-spacing:.11em;color:var(--ink-3);margin:0 0 8px;font-
 <div class="sheetpaper">
   <div class="topband">
     <div class="band">
-      <div class="fig"><span class="lb">들어온 돈</span><span class="vv i n" id="sIn">0</span></div>
-      <div class="fig"><span class="lb">나간 돈</span><span class="vv o n" id="sOut">0</span></div>
-      <div class="fig"><span class="lb">모은 돈</span><span class="vv s n" id="sSave">0</span></div>
+      <button class="fig tap" data-fig="in" aria-expanded="false"><span class="lb">들어온 돈 <i class="cv">▾</i></span><span class="vv i n" id="sIn">0</span></button>
+      <button class="fig tap" data-fig="out" aria-expanded="false"><span class="lb">나간 돈 <i class="cv">▾</i></span><span class="vv o n" id="sOut">0</span></button>
+      <button class="fig tap" data-fig="save" aria-expanded="false"><span class="lb">모은 돈 <i class="cv">▾</i></span><span class="vv s n" id="sSave">0</span></button>
       <div class="fig big"><span class="lb">잔액</span><span class="vv n" id="sNet">0</span>
         <span class="dl" id="sDelta"></span></div>
       <div class="sp"></div>
       <div class="note" id="note"></div>
     </div>
+    <div class="dtl" id="dtl" hidden></div>
     <div class="gaugelb"><span id="gaugeL"></span><span id="gaugeR"></span></div>
   </div>
 
@@ -257,6 +308,9 @@ h2{font-size:10.5px;letter-spacing:.11em;color:var(--ink-3);margin:0 0 8px;font-
       <b>수식</b> 칸에 <code>500000+250000*2</code> 처럼 사칙연산을 쓸 수 있어. 다른 항목은
       <code>[월세]*12</code> 처럼 대괄호로 부르고, 대괄호 안에 섹션 이름을 넣으면 그 섹션 합계를 가리켜.
       칸을 누르면 수식이, 손을 떼면 계산값이 보여.<br>
+      <b>세부내역 ▸</b> 항목 이름 왼쪽의 <b>▸</b> 칸을 누르면 그 항목이 펼쳐져. 통신비를 누가 얼마씩
+      냈는지처럼 이름과 금액을 따로 적으면, 항목 금액은 그 합으로 자동 계산돼.
+      세부내역이 있는 항목은 이름 옆에 건수가 뱃지로 붙어.<br>
       <b>고정 ●</b> 켜두면 새 달을 만들 때 금액까지 그대로 넘어와. 꺼두면 이름만 넘어오고 금액은 빈칸.<br>
       <b>＋</b> 척추 맨 오른쪽 ＋ 를 누르면 다음 달이 생겨. 섹션 앞의 <b>＋ − ↓ ·</b> 뱃지를 누르면
       어디로 보낼지 고르는 메뉴가 열려.
@@ -319,22 +373,35 @@ function parseExpr(tk,resolve){
   return v;
 }
 function compute(month){
-  const itemVal={},secTot={},err={},byName={},secByName={};
+  const itemVal={},partVal={},secTot={},err={},byName={},secByName={};
   month.sections.forEach(s=>{
     if(!secByName[s.name]) secByName[s.name]=s;
     s.items.forEach(it=>{ if(!byName[it.name]) byName[it.name]=it });
   });
   const stack=new Set();
+  function evalRaw(raw){
+    const r=(raw||'').trim().replace(/^=/,'');
+    if(!r) return 0;
+    if(/^-?[\d,]+(\.\d+)?$/.test(r)) return Number(r.replace(/,/g,''));
+    const v=parseExpr(tokenize(r),resolve);
+    if(!Number.isFinite(v)) throw Error('식 오류');
+    return v;
+  }
   function valOfItem(it){
     if(it.id in itemVal) return itemVal[it.id];
     if(stack.has(it.id)) throw Error('순환 참조');
     stack.add(it.id);
     let v=0;
     try{
-      const raw=(it.raw||'').trim().replace(/^=/,'');
-      if(!raw) v=0;
-      else if(/^-?[\d,]+(\.\d+)?$/.test(raw)) v=Number(raw.replace(/,/g,''));
-      else v=parseExpr(tokenize(raw),resolve);
+      /* 세부내역이 하나라도 있으면 항목 금액은 세부내역의 합이다 */
+      if(it.parts&&it.parts.length){
+        v=0;
+        it.parts.forEach(p=>{
+          let pv=0;
+          try{ pv=evalRaw(p.raw) }catch(e){ err[p.id]=e.message }
+          partVal[p.id]=pv; v+=pv;
+        });
+      } else v=evalRaw(it.raw);
       if(!Number.isFinite(v)) throw Error('식 오류');
     }catch(e){ err[it.id]=e.message; v=0 }
     stack.delete(it.id);
@@ -355,7 +422,7 @@ function compute(month){
     throw Error('['+name+'] 없음');
   }
   month.sections.forEach(valOfSec);
-  return {itemVal,secTot,err};
+  return {itemVal,partVal,secTot,err};
 }
 
 /* ── 자료 ── */
@@ -374,6 +441,7 @@ function load(){
   return seedDB();
 }
 const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
+
 
 function seedDB(){
   /* 처음 열었을 때의 빈 가계부. 실제 금액은 백업 JSON을 불러와서 채운다. */
@@ -498,6 +566,92 @@ function render(){
         <button class="newblk" data-newsec="${kind}">＋ 섹션 추가</button>
       </div>
     </div>`).join('');
+
+  renderDtl();
+}
+
+/* ── 요약 숫자의 상세내역 ──────────────────────────────────
+   상단 '들어온 돈/나간 돈/모은 돈'을 누르면 그 숫자가 어떤 섹션·항목의
+   합인지 펼쳐 보여준다. 금액을 식으로 적어둔 항목은 식도 같이 보인다. */
+const DTLLB={in:'들어온 돈',out:'나간 돈',save:'모은 돈'};
+let dtlOpen=null;
+function renderDtl(){
+  const box=$('#dtl');
+  document.querySelectorAll('.fig.tap').forEach(b=>
+    b.setAttribute('aria-expanded', b.dataset.fig===dtlOpen ? 'true':'false'));
+  if(!dtlOpen){ box.hidden=true; box.innerHTML=''; return }
+
+  const M=db.months[curKey], C=compute(M);
+  const secs=M.sections.filter(s=>s.kind===dtlOpen);
+  const cls=dtlOpen==='in'?'i':dtlOpen==='out'?'o':'s';
+  const colr=dtlOpen==='in'?'var(--in)':dtlOpen==='out'?'var(--out)':'var(--save)';
+  let tot=0; secs.forEach(s=>tot+=C.secTot[s.id]||0);
+
+  const body = !secs.length
+    ? `<div class="none">아직 '${DTLLB[dtlOpen]}'에 섹션이 없어.</div>`
+    : secs.map(s=>{
+        const rows = s.items.length
+          ? s.items.map(it=>{
+              const v=C.itemVal[it.id]||0, parts=it.parts||[];
+              const ex=!parts.length&&isFormula(it.raw)
+                ? `<span class="dx">${esc(it.raw.replace(/^=/,''))}</span>` : '';
+              const head=`<div class="dr sub"><span class="dn">${esc(it.name)}</span>${ex}
+                        <span class="dv">${won(v)}</span></div>`;
+              /* 쪼개 적은 항목은 누가 얼만지까지 한 번에 보이게 */
+              return head + parts.map(p=>
+                `<div class="dr pp"><span class="dn">${esc(p.name||'이름 없음')}</span>
+                   <span class="dv">${won(C.partVal[p.id]||0)}</span></div>`).join('');
+            }).join('')
+          : `<div class="dr sub"><span class="dn">항목 없음</span><span class="dv">0</span></div>`;
+        return `<div class="ds">${esc(s.name)} · ${won(C.secTot[s.id]||0)}</div>${rows}`;
+      }).join('');
+
+  box.innerHTML=`<div class="dh"><span>${DTLLB[dtlOpen]} 상세내역</span></div>${body}
+    <div class="dt"><span class="dn">${DTLLB[dtlOpen]} 합계</span>
+      <span class="dv ${cls}" style="color:${colr}">${won(tot)}</span></div>`;
+  box.hidden=false;
+}
+document.querySelectorAll('.fig.tap').forEach(b=>{
+  b.onclick=()=>{ dtlOpen = dtlOpen===b.dataset.fig ? null : b.dataset.fig; renderDtl() };
+});
+
+/* ── 항목 한 줄 + 그 항목의 세부내역 ────────────────────────
+   어느 항목이든 펼쳐서 '누가/무엇이 얼마'인지 쪼개 적을 수 있다.
+   세부내역이 하나라도 있으면 항목 금액은 그 합이 되고 직접 입력은 잠긴다. */
+const openItems=new Set();
+function itemHTML(it,C){
+  const parts=it.parts||[], has=parts.length>0, open=openItems.has(it.id);
+  const bad=C.err[it.id];
+  return `
+    <div class="row ${it.fixed?'pinned':''} ${has?'hasparts':''}" data-item="${it.id}">
+      <button class="cx ${open?'on':''}" data-act="expand"
+              aria-expanded="${open?'true':'false'}"
+              title="${has?`세부내역 ${parts.length}건 ${open?'접기':'펼치기'}`:'세부내역으로 쪼개기'}">${open?'▾':'▸'}</button>
+      <input class="nm" data-act="itemname" value="${esc(it.name)}" aria-label="항목 이름"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      ${has?`<span class="pc">${parts.length}</span>`:''}
+      <input class="vl n ${bad?'err':has?'sum':isFormula(it.raw)?'fx':''}"
+             data-act="val" data-raw="${esc(it.raw||'')}" aria-label="금액"
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+             ${has?'readonly title="세부내역의 합이라 직접 못 고쳐. 세부내역을 고치면 따라 바뀌어."':''}
+             value="${bad?esc(bad):won(C.itemVal[it.id]||0)}">
+      <button class="pin ${it.fixed?'on':''}" data-act="pin" title="다음 달에 금액까지 넘기기">${it.fixed?'●':'○'}</button>
+      <button class="x" data-act="delitem" title="항목 삭제">✕</button>
+    </div>
+    ${open?`<div class="parts">
+      ${parts.map(p=>`
+        <div class="prow" data-part="${p.id}">
+          <input class="nm" data-act="partname" value="${esc(p.name)}" aria-label="세부내역 이름"
+                 placeholder="누구·무엇"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <input class="vl n ${C.err[p.id]?'err':isFormula(p.raw)?'fx':''}"
+                 data-act="partval" data-raw="${esc(p.raw||'')}" aria-label="세부내역 금액"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                 value="${C.err[p.id]?esc(C.err[p.id]):won(C.partVal[p.id]||0)}">
+          <button class="x" data-act="delpart" title="세부내역 삭제">✕</button>
+        </div>`).join('')}
+      <button class="addp" data-act="addpart">＋ 세부내역</button>
+    </div>`:''}`;
 }
 
 function blockHTML(s,C){
@@ -508,17 +662,7 @@ function blockHTML(s,C){
         <input class="nm" data-act="secname" value="${esc(s.name)}" aria-label="섹션 이름">
         <button class="x" data-act="delsec" title="섹션 삭제">✕</button>
       </header>
-      ${s.items.map(it=>`
-        <div class="row ${it.fixed?'pinned':''}" data-item="${it.id}">
-          <input class="nm" data-act="itemname" value="${esc(it.name)}" aria-label="항목 이름"
-                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-          <input class="vl n ${C.err[it.id]?'err':isFormula(it.raw)?'fx':''}"
-                 data-act="val" data-raw="${esc(it.raw||'')}" aria-label="금액"
-                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                 value="${C.err[it.id]?esc(C.err[it.id]):won(C.itemVal[it.id]||0)}">
-          <button class="pin ${it.fixed?'on':''}" data-act="pin" title="다음 달에 금액까지 넘기기">${it.fixed?'●':'○'}</button>
-          <button class="x" data-act="delitem" title="항목 삭제">✕</button>
-        </div>`).join('')}
+      ${s.items.map(it=>itemHTML(it,C)).join('')}
       <button class="add" data-act="additem">＋ 항목</button>
       <div class="blkfoot">
         <span class="lb">합계</span>
@@ -592,7 +736,14 @@ function toast(msg,snap){
 
 /* ── 조작 ── */
 const findSec=el=>db.months[curKey].sections.find(s=>s.id===el.closest('.blk').dataset.sec);
-const findItem=el=>{const s=findSec(el);return [s,s.items.find(i=>i.id===el.closest('.row').dataset.item)]};
+/* 세부내역 줄(.prow)과 '＋ 세부내역' 버튼은 .row 안이 아니라 바로 뒤 .parts 안에 있다.
+   그래서 항목 줄을 찾을 땐 두 경우를 모두 본다. */
+const rowOf=el=>el.closest('.row')||el.closest('.parts')?.previousElementSibling;
+const findItem=el=>{const s=findSec(el);return [s,s.items.find(i=>i.id===rowOf(el).dataset.item)]};
+const findPart=el=>{
+  const [s,it]=findItem(el);
+  return [s,it,(it.parts||[]).find(p=>p.id===el.closest('.prow').dataset.part)];
+};
 
 $('#tabs').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
@@ -633,36 +784,107 @@ $('#sheet').addEventListener('click',e=>{
   else if(act==='additem'){
     const s=findSec(b), secId=s.id;
     const y=window.scrollY;
-    s.items.push({id:uid(),name:'새 항목',raw:'',fixed:false}); save(); render();
+    s.items.push({id:uid(),name:'새 항목',raw:'',fixed:false,parts:[]}); save(); render();
     window.scrollTo(0,y);
     const rows=document.querySelector(`[data-sec="${secId}"]`).querySelectorAll('.row');
     selectSoftly(rows[rows.length-1].querySelector('.nm'));
   }
+  /* 세부내역 — 어느 항목에나 똑같이 붙는다 */
+  else if(act==='expand'){
+    const [,it]=findItem(b), y=window.scrollY;
+    if(openItems.has(it.id)) openItems.delete(it.id); else openItems.add(it.id);
+    render(); window.scrollTo(0,y);
+  }
+  else if(act==='addpart'){
+    const [,it]=findItem(b), y=window.scrollY;
+    if(!it.parts) it.parts=[];
+    /* 처음 쪼갤 때, 이미 적혀 있던 금액은 첫 세부내역으로 옮겨 값이 사라지지 않게 한다 */
+    if(!it.parts.length && (it.raw||'').trim()){
+      it.parts.push({id:uid(),name:it.name,raw:it.raw});
+      it.raw='';
+    }
+    it.parts.push({id:uid(),name:'',raw:''});
+    openItems.add(it.id); save(); render(); window.scrollTo(0,y);
+    const rows=document.querySelectorAll(`[data-item="${it.id}"] ~ .parts .prow`);
+    const last=document.querySelector(`[data-item="${it.id}"]`)
+      ?.nextElementSibling?.querySelectorAll('.prow');
+    selectSoftly((last&&last[last.length-1]||rows[rows.length-1])?.querySelector('.nm'));
+  }
+  else if(act==='delpart'){
+    const [,it,p]=findPart(b), snap=snapshot(), y=window.scrollY;
+    it.parts=it.parts.filter(x=>x!==p); save(); render(); window.scrollTo(0,y);
+    toast(`'${p.name||'이름 없는 세부내역'}'을 지웠어`,snap);
+  }
 });
 
 $('#sheet').addEventListener('focusin',e=>{
-  const el=e.target;
-  if(el.dataset.act==='val'){ el.value=el.dataset.raw; el.classList.remove('err'); setTimeout(()=>el.select(),0) }
-});
-$('#sheet').addEventListener('focusout',e=>{
   const el=e.target, act=el.dataset.act;
-  if(act==='val'){ const [,it]=findItem(el); it.raw=el.value.trim(); save(); render() }
+  if((act==='val'&&!el.readOnly)||act==='partval'){
+    el.value=el.dataset.raw; el.classList.remove('err'); setTimeout(()=>el.select(),0);
+  }
+});
+/* render()는 화면을 통째로 다시 그리므로 포커스가 날아간다. 손가락으로 칸을 하나씩
+   눌러 쓸 땐 티가 안 나지만, 하드웨어 키보드로 Tab을 눌러 옮기면 focusout → render가
+   먼저 터져서 다음 칸이 사라진 채로 포커스가 허공에 남는다(아이패드에서 "키보드가
+   안 먹는" 증상). 그래서 (1) 값이 실제로 바뀐 게 아니면 다시 그리지 않고,
+   (2) 다시 그려야 할 땐 Tab이 가려던 칸을 새 DOM에서 찾아 포커스를 되돌려준다. */
+function focusKey(el){
+  if(!el||!el.dataset||!el.dataset.act) return null;
+  const p=el.closest('[data-part]'), it=el.closest('[data-item]'), s=el.closest('[data-sec]');
+  if(p)  return `[data-part="${p.dataset.part}"] [data-act="${el.dataset.act}"]`;
+  if(it) return `[data-item="${it.dataset.item}"] [data-act="${el.dataset.act}"]`;
+  if(s)  return `[data-sec="${s.dataset.sec}"] [data-act="${el.dataset.act}"]`;
+  return null;
+}
+function renderKeepFocus(sel){
+  render();
+  if(!sel) return;
+  const n=document.querySelector(sel);
+  if(n) setTimeout(()=>{ n.focus(); if(/val$/.test(n.dataset.act||'')) n.select() },0);
+}
+/* 값 칸이 포커스를 잃었는데 내용은 그대로일 때, 다시 그리지 않고 표시만 되돌린다 */
+function repaintVal(el,o,isPart){
+  const C=compute(db.months[curKey]);
+  const bad=C.err[o.id];
+  el.value = bad ? bad : won((isPart?C.partVal:C.itemVal)[o.id]||0);
+  el.dataset.raw = o.raw||'';
+  el.classList.toggle('err',!!bad);
+  el.classList.toggle('fx',!bad&&isFormula(o.raw));
+}
+$('#sheet').addEventListener('focusout',e=>{
+  const el=e.target, act=el.dataset.act, sel=focusKey(e.relatedTarget);
+  if(act==='val'){
+    if(el.readOnly) return;              /* 세부내역의 합이라 편집 대상이 아님 */
+    const [,it]=findItem(el), v=el.value.trim();
+    if(v!==(it.raw||'')){ it.raw=v; save(); renderKeepFocus(sel) }
+    else repaintVal(el,it);
+  }
+  else if(act==='partval'){
+    const [,,p]=findPart(el), v=el.value.trim();
+    if(v!==(p.raw||'')){ p.raw=v; save(); renderKeepFocus(sel) }
+    else repaintVal(el,p,true);
+  }
+  else if(act==='partname'){
+    const [,,p]=findPart(el), v=el.value.trim();
+    if(v!==p.name){ p.name=v; save(); renderKeepFocus(sel) }
+  }
   else if(act==='itemname'){
     const [,it]=findItem(el), v=el.value.trim();
-    if(v&&v!==it.name){ it.name=v; save(); render() } else el.value=it.name;
+    if(v&&v!==it.name){ it.name=v; save(); renderKeepFocus(sel) } else el.value=it.name;
   }
   else if(act==='secname'){
     const s=findSec(el), v=el.value.trim();
-    if(v&&v!==s.name){ s.name=v; save(); render() } else el.value=s.name;
+    if(v&&v!==s.name){ s.name=v; save(); renderKeepFocus(sel) } else el.value=s.name;
   }
 });
+const VALSEL='[data-act="val"]:not([readonly]),[data-act="partval"]';
 $('#sheet').addEventListener('keydown',e=>{
   if(e.key!=='Enter') return;
   e.preventDefault();
-  const vals=[...document.querySelectorAll('[data-act="val"]')];
+  const vals=[...document.querySelectorAll(VALSEL)];
   const i=vals.indexOf(e.target);
   e.target.blur();
-  if(i>-1) setTimeout(()=>{const n=document.querySelectorAll('[data-act="val"]')[i+1]; n&&n.focus()},0);
+  if(i>-1) setTimeout(()=>{const n=document.querySelectorAll(VALSEL)[i+1]; n&&n.focus()},0);
 });
 
 $('#allBtn').onclick=()=>{
@@ -677,7 +899,8 @@ $('#allBtn').onclick=()=>{
       if(!ts){ ts={id:uid(),name:ss.name,kind:ss.kind,items:[]}; M.sections.splice(si,0,ts) }
       ss.items.forEach(s2=>{
         const ti=ts.items.find(x=>x.name===s2.name);
-        if(!ti) ts.items.push({id:uid(),name:s2.name,raw:s2.fixed?s2.raw:'',fixed:s2.fixed});
+        if(!ti) ts.items.push({id:uid(),name:s2.name,raw:s2.fixed?s2.raw:'',fixed:s2.fixed,
+                               parts:copyParts(s2,s2.fixed)});
         else ti.fixed=s2.fixed;
       });
     });
@@ -689,11 +912,16 @@ $('#delMonth').onclick=()=>{
   if(!confirm(`${Number(curKey.split('-')[1])}월을 통째로 지울까?`)) return;
   delete db.months[curKey]; save(); curKey=keys()[keys().length-1]; render();
 };
+/* 세부내역 틀은 다음 달로 넘기고, 금액은 고정(●) 항목일 때만 함께 넘긴다 */
+function copyParts(it,keepRaw){
+  return (it.parts||[]).map(p=>({id:uid(),name:p.name,raw:keepRaw?p.raw:''}));
+}
 function makeMonth(k){
   if(db.months[k]) return;
   const base=db.months[nearestKey(k)];
   db.months[k]= base ? {memo:'',sections:base.sections.map(s=>({id:uid(),name:s.name,kind:s.kind,
-      items:s.items.map(it=>({id:uid(),name:it.name,raw:it.fixed?it.raw:'',fixed:it.fixed}))}))}
+      items:s.items.map(it=>({id:uid(),name:it.name,raw:it.fixed?it.raw:'',fixed:it.fixed,
+                              parts:copyParts(it,it.fixed)}))}))}
     : {memo:'',sections:[]};
   save();
 }
